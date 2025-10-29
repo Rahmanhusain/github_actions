@@ -1,5 +1,10 @@
 name: Build and publish Docker image
 
+# grant the token the rights to push packages
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [main]
@@ -20,7 +25,6 @@ jobs:
       - name: Derive lowercase owner
         shell: bash
         run: |
-          # Convert GITHUB_REPOSITORY_OWNER to lowercase and export as env var
           echo "OWNER_LOWER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
