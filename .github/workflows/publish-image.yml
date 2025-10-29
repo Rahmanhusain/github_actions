@@ -29,5 +29,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner.lower() }}/simple-express-server:latest
-            ghcr.io/${{ github.repository_owner.lower() }}/simple-express-server:${{ github.sha }}
+            ghcr.io/${{ toLower(github.repository_owner) }}/simple-express-server:latest
+            ghcr.io/${{ toLower(github.repository_owner) }}/simple-express-server:${{ github.sha }}
