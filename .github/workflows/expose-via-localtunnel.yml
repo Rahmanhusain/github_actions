@@ -1,0 +1,70 @@
+name: Expose server via localtunnel (ephemeral URL)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  expose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start server and expose with localtunnel
+        run: |
+          # Start the Express server in the background
+          nohup node index.js > server.log 2>&1 &
+
+          # Wait until the server is responding locally
+          echo "Waiting for server on http://localhost:3000 ..."
+          for i in {1..30}; do
+            if curl -sSf http://localhost:3000/ >/dev/null; then
+              echo "Server is up"
+              break
+            fi
+            sleep 1
+          done
+
+          # Start localtunnel and write its output to a file
+          # `npx localtunnel` will print a public URL like "your url is: https://xyz.loca.lt"
+          npx -y localtunnel --port 3000 > lt.log 2>&1 &
+          sleep 2
+
+          # Try to extract an https URL from the localtunnel log
+          PUBLIC_URL=$(grep -oE 'https?://[a-zA-Z0-9./?=_-]+' lt.log | head -n1 || true)
+          if [ -z "$PUBLIC_URL" ]; then
+            echo "Could not find public URL in lt.log; showing lt.log contents:" && cat lt.log
+            exit 1
+          fi
+
+          echo "Public URL: $PUBLIC_URL"
+          # Save the URL for later workflow steps and the summary
+          echo "$PUBLIC_URL" > public_url.txt
+
+          # Keep the job alive so the tunnel stays open (adjust duration as needed)
+          echo "Tunnel will remain open while this job runs (up to timeout). Sleeping for 1 hour..."
+          sleep 3600
+
+        shell: bash
+
+      - name: Show public URL
+        if: always()
+        run: |
+          echo "Public URL (if available):"
+          cat public_url.txt || true
+
+      - name: Upload public URL as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-url
+          path: public_url.txt

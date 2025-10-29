@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-express-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simple-express-server
+  template:
+    metadata:
+      labels:
+        app: simple-express-server
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/YOUR_GITHUB_USER/simple-express-server:latest
+          ports:
+            - containerPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-express-service
+spec:
+  type: ClusterIP
+  selector:
+    app: simple-express-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
